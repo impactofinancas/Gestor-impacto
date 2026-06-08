@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Impacto $">
+  <meta name="theme-color" content="#C9A84C">
+  <link rel="manifest" href="manifest.json">
+  <!-- Apple touch icon (inline SVG converted approach) -->
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <title>Gestor Financeiro · Impacto</title>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800&display=swap');
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:       #0d0d1a;
+      --surface:  #151528;
+      --card:     #1c1c35;
+      --gold:     #C9A84C;
+      --gold2:    #e8c547;
+      --blue:     #00d4ff;
+      --green:    #00d084;
+      --red:      #ff4757;
+      --text:     #e8eaf0;
+      --muted:    #8892a4;
+      --border:   #242440;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bot: env(safe-area-inset-bottom, 0px);
+    }
+
+    html, body { height: 100%; overflow: hidden; }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+    }
+
+    /* ── STATUS BAR SAFE AREA ── */
+    .safe-top { height: var(--safe-top); background: var(--bg); flex-shrink: 0; }
+
+    /* ── HEADER ── */
+    header {
+      flex-shrink: 0;
+      padding: 14px 20px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      letter-spacing: 2px;
+      background: linear-gradient(90deg, var(--gold), var(--blue));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+    }
+    .logo-sub { font-size: 10px; color: var(--muted); letter-spacing: 1px; margin-top: 1px; font-family: 'Nunito', sans-serif; -webkit-text-fill-color: var(--muted); }
+    .install-btn {
+      background: linear-gradient(135deg, var(--gold), var(--gold2));
+      color: #0d0d1a;
+      border: none;
+      border-radius: 8px;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      gap: 4px;
+      font-family: 'Nunito', sans-serif;
+    }
+    .install-btn.show { display: flex; }
+
+    /* ── TABS ── */
+    .tabs {
+      flex-shrink: 0;
+      display: flex;
+      padding: 10px 16px;
+      gap: 8px;
+      background: var(--bg);
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 10px 6px;
+      background: var(--surface);
+      border: 2px solid transparent;
+      color: var(--muted);
+      cursor: pointer;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 13px;
+      font-family: 'Nunito', sans-serif;
+      transition: all .25s;
+      text-align: center;
+    }
+    .tab-btn.active {
+      background: var(--card);
+      color: var(--gold);
+      border-color: var(--gold);
+      box-shadow: 0 0 14px rgba(201,168,76,.25);
+    }
+
+    /* ── SCROLLABLE BODY ── */
+    .app-body {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      padding: 0 16px 16px;
+      overscroll-behavior: contain;
+    }
+
+    /* ── TAB CONTENT ── */
+    .tab-content { display: none; flex-direction: column; padding-top: 14px; }
+    .tab-content.active { display: flex; }
+
+    /* ── BALANCE CARD ── */
+    .balance-card {
+      background: linear-gradient(135deg, var(--surface), var(--card));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .balance-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+    }
+    .balance-row + .balance-row { border-top: 1px solid var(--border); }
+    .balance-label { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; font-weight: 600; }
+    .balance-icon { font-size: 16px; }
+    .balance-value { font-size: 15px; font-weight: 800; }
+    .balance-value.income { color: var(--green); }
+    .balance-value.expense { color: var(--red); }
+    .balance-value.total { color: var(--gold); font-size: 18px; }
+    .balance-value.gold { color: var(--gold); }
+
+    /* ── QUICK ADD ── */
+    .quick-add { display: flex; gap: 10px; margin-bottom: 14px; }
+    .quick-add-btn {
+      flex: 1;
+      padding: 13px;
+      border: 2px solid;
+      border-radius: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      font-size: 14px;
+      font-family: 'Nunito', sans-serif;
+      transition: all .2s;
+      letter-spacing: .3px;
+    }
+    .quick-add-btn.income { background: rgba(0,208,132,.1); color: var(--green); border-color: var(--green); }
+    .quick-add-btn.income:active { background: rgba(0,208,132,.3); transform: scale(.97); }
+    .quick-add-btn.expense { background: rgba(255,71,87,.1); color: var(--red); border-color: var(--red); }
+    .quick-add-btn.expense:active { background: rgba(255,71,87,.3); transform: scale(.97); }
+    .quick-add-btn.contract { background: rgba(201,168,76,.1); color: var(--gold); border-color: var(--gold); }
+    .quick-add-btn.contract:active { background: rgba(201,168,76,.3); transform: scale(.97); }
+
+    /* ── TRANSACTION ITEMS ── */
+    .transaction-item {
+      background: var(--surface);
+      border-left: 4px solid var(--border);
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      border-radius: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      animation: slideUp .3s ease;
+    }
+    .transaction-item.income { border-left-color: var(--green); }
+    .transaction-item.expense { border-left-color: var(--red); }
+    .transaction-info { flex: 1; }
+    .transaction-category { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+    .transaction-desc { font-size: 11px; color: var(--muted); margin-bottom: 2px; }
+    .transaction-date { font-size: 11px; color: var(--muted); opacity: .8; }
+    .transaction-amount { font-size: 15px; font-weight: 800; text-align: right; }
+    .transaction-amount.income { color: var(--green); }
+    .transaction-amount.expense { color: var(--red); }
+    .delete-btn { background: none; border: none; color: var(--red); cursor: pointer; margin-left: 10px; font-size: 17px; opacity: .6; transition: opacity .2s; }
+    .delete-btn:active { opacity: 1; }
+
+    /* ── CONTRACT CARD ── */
+    .contract-card {
+      background: var(--surface);
+      border-left: 4px solid var(--gold);
+      padding: 14px;
+      margin-bottom: 10px;
+      border-radius: 12px;
+      animation: slideUp .3s ease;
+    }
+    .contract-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+    .contract-city { font-weight: 800; color: var(--gold); font-size: 14px; }
+    .status-badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; }
+    .status-badge.pago { background: rgba(0,208,132,.15); color: var(--green); }
+    .status-badge.areceber { background: rgba(255,71,87,.15); color: var(--red); }
+    .contract-info { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+    .contract-info-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
+    .contract-info-row span:last-child { font-weight: 700; color: var(--text); }
+    .contract-value { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: var(--gold); letter-spacing: 1px; margin-bottom: 10px; }
+    .contract-actions { display: flex; gap: 6px; justify-content: flex-end; }
+    .contract-btn {
+      padding: 7px 11px;
+      border: 1px solid;
+      border-radius: 7px;
+      font-size: 12px;
+      cursor: pointer;
+      font-weight: 700;
+      font-family: 'Nunito', sans-serif;
+      transition: all .2s;
+    }
+    .contract-btn.pagar { background: rgba(0,208,132,.1); color: var(--green); border-color: var(--green); }
+    .contract-btn.pagar:active { background: rgba(0,208,132,.3); transform: scale(.97); }
+    .contract-btn.desfazer { background: rgba(0,212,255,.1); color: var(--blue); border-color: var(--blue); }
+    .contract-btn.desfazer:active { background: rgba(0,212,255,.3); transform: scale(.97); }
+    .contract-btn.deletar { background: rgba(255,71,87,.1); color: var(--red); border-color: var(--red); }
+    .contract-btn.deletar:active { background: rgba(255,71,87,.3); transform: scale(.97); }
+
+    /* ── CITY FILTER ── */
+    .filter-wrap { margin-bottom: 12px; }
+    .city-filter-select {
+      width: 100%;
+      padding: 11px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: 'Nunito', sans-serif;
+      font-weight: 600;
+      -webkit-appearance: none;
+    }
+    .city-filter-select:focus { outline: none; border-color: var(--gold); }
+
+    /* ── EMPTY STATE ── */
+    .empty-state { text-align: center; padding: 36px 20px; color: var(--muted); }
+    .empty-state-icon { font-size: 44px; margin-bottom: 10px; }
+    .empty-state p { font-size: 14px; font-weight: 600; }
+
+    /* ── SECTION TITLE ── */
+    .section-title { font-size: 11px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; }
+
+    /* ── MODAL ── */
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.75);
+      z-index: 1000;
+      align-items: flex-end;
+    }
+    .modal.active { display: flex; animation: fadeIn .25s ease; }
+    .modal-content {
+      background: var(--surface);
+      width: 100%;
+      padding: 24px 20px calc(20px + var(--safe-bot));
+      border-radius: 22px 22px 0 0;
+      animation: slideUp .3s ease;
+      max-height: 92dvh;
+      overflow-y: auto;
+    }
+    .modal-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .modal-header h2 { font-size: 17px; font-weight: 800; }
+    .close-btn { background: var(--card); border: none; color: var(--muted); width: 32px; height: 32px; border-radius: 8px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+    /* ── FORM ── */
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 6px; font-size: 12px; color: var(--muted); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 13px 14px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 15px;
+      font-family: 'Nunito', sans-serif;
+      font-weight: 600;
+      -webkit-appearance: none;
+    }
+    .form-group input:focus,
+    .form-group select:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,.15); }
+    .form-buttons { display: flex; gap: 10px; margin-top: 4px; }
+    .btn {
+      flex: 1; padding: 14px;
+      border: none; border-radius: 12px;
+      font-weight: 800; cursor: pointer;
+      font-size: 15px; font-family: 'Nunito', sans-serif;
+      transition: all .2s;
+    }
+    .btn-primary { background: linear-gradient(90deg, var(--gold), var(--gold2)); color: #0d0d1a; }
+    .btn-primary:active { transform: scale(.98); }
+    .btn-secondary { background: var(--card); color: var(--muted); border: 1px solid var(--border); }
+    .btn-secondary:active { background: var(--border); }
+
+    /* ── SAFE BOTTOM ── */
+    .safe-bot { height: var(--safe-bot); flex-shrink: 0; }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed;
+      bottom: calc(20px + var(--safe-bot));
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--card);
+      border: 1px solid var(--gold);
+      color: var(--text);
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      z-index: 2000;
+      opacity: 0;
+      transition: all .3s;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── PWA BANNER ── */
+    .pwa-banner {
+      display: none;
+      margin: 0 0 14px;
+      background: linear-gradient(135deg, rgba(201,168,76,.15), rgba(0,212,255,.08));
+      border: 1px solid var(--gold);
+      border-radius: 14px;
+      padding: 14px;
+      align-items: center;
+      gap: 12px;
+    }
+    .pwa-banner.show { display: flex; }
+    .pwa-banner-text { flex: 1; font-size: 13px; line-height: 1.5; }
+    .pwa-banner-text strong { color: var(--gold); display: block; font-size: 14px; margin-bottom: 2px; }
+    .pwa-close { background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; }
+
+    /* ── ANIMATIONS ── */
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    @keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+
+    /* ── SCROLLBAR ── */
+    .app-body::-webkit-scrollbar { width: 4px; }
+    .app-body::-webkit-scrollbar-track { background: transparent; }
+    .app-body::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<div class="safe-top"></div>
+
+<header>
+  <div>
+    <div class="logo">💰 Impacto $</div>
+    <div class="logo-sub">GESTOR FINANCEIRO</div>
+  </div>
+  <button class="install-btn" id="install-btn">📲 Instalar App</button>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="pessoal">Pessoal</button>
+  <button class="tab-btn" data-tab="impacto">Impacto</button>
+  <button class="tab-btn" data-tab="vendas">Vendas 🏆</button>
+</div>
+
+<div class="app-body" id="app-body">
+
+  <!-- ── TAB PESSOAL ── -->
+  <div class="tab-content active" id="pessoal-tab">
+    <div id="pwa-banner-pessoal" class="pwa-banner">
+      <div style="font-size:28px">📲</div>
+      <div class="pwa-banner-text">
+        <strong>Instalar na tela inicial</strong>
+        Toque em "Instalar App" no topo para usar sem abrir o navegador.
+      </div>
+      <button class="pwa-close" onclick="closePwaBanner()">✕</button>
+    </div>
+
+    <div class="balance-card">
+      <div class="balance-row">
+        <span class="balance-label"><span class="balance-icon">📈</span>Receitas</span>
+        <span class="balance-value income" id="pessoal-income">R$ 0,00</span>
+      </div>
+      <div class="balance-row">
+        <span class="balance-label"><span class="balance-icon">📉</span>Despesas</span>
+        <span class="balance-value expense" id="pessoal-expense">R$ 0,00</span>
+      </div>
+      <div class="balance-row">
+        <span class="balance-label"><span class="balance-icon">⚖️</span>Saldo</span>
+        <span class="balance-value total" id="pessoal-balance">R$ 0,00</span>
+      </div>
+    </div>
+    <div class="quick-add">
+      <button class="quick-add-btn income" onclick="openModal('pessoal','income')">+ Receita</button>
+      <button class="quick-add-btn expense" onclick="openModal('pessoal','expense')">− Despesa</button>
+    </div>
+    <div class="section-title">Transações</div>
+    <div id="pessoal-list">
+      <div class="empty-state"><div class="empty-state-icon">📋</div><p>Nenhuma transação registrada</p></div>
+    </div>
+  </div>
+
+  <!-- ── TAB IMPACTO ── -->
+  <div class="tab-content" id="impacto-tab">
+    <div class="balance-card">
+      <div class="balance-row">
+        <span class="balance-label"><span class="balance-icon">📈</span>Receitas</span>
+        <span class="balance-value income" id="impacto-income">R$ 0,00</span>
+      </div>
+      <div class="balance-row">
+        <span class="balance-label"><span class="balance-icon">📉</span>Despesas</span>
+        <span class="balance-value expense" id="impacto-expense">R$ 0,00</span>
+      </div>
+      <div class="balance-row">
+        <span class="balance-label"><span class="balance-icon">⚖️</span>Saldo</span>
+        <span class="balance-value total" id="impacto-balance">R$ 0,00</span>
+      </div>
+    </div>
+    <div class="quick-add">
+      <button class="quick-add-btn income" onclick="openModal('impacto','income')">+ Receita</button>
+      <button class="quick-add-btn expense" onclick="openModal('impacto','expense')">− Despesa</button>
+    </div>
+    <div class="section-title">Transações</div>
+    <div id="impacto-list">
+      <div class="empty-state"><div class="empty-state-icon">📋</div><p>Nenhuma transação registrada</p></div>
+    </div>
+  </div>
+
+  <!-- ── TAB VENDAS ── -->
+  <div class="tab-content" id="vendas-tab">
+    <div class="balance-card">
+      <div class="balance-row">
+        <span class="balance-label"><span class="balance-icon">🎯</span>Total Vendido</span>
+        <span class="balance-value income" id="vendas-total">R$ 0,00</span>
+      </div>
+      <div class="balance-row">
+        <span class="balance-label"><span class="balance-icon">✅</span>Recebido</span>
+        <span class="balance-value income" id="vendas-recebido">R$ 0,00</span>
+      </div>
+      <div class="balance-row">
+        <span class="balance-label"><span class="balance-icon">⏳</span>A Receber</span>
+        <span class="balance-value expense" id="vendas-areceber">R$ 0,00</span>
+      </div>
+      <div class="balance-row">
+        <span class="balance-label"><span class="balance-icon">🏪</span>Contratos</span>
+        <span class="balance-value gold" id="vendas-contratos">0</span>
+      </div>
+    </div>
+    <div class="quick-add">
+      <button class="quick-add-btn contract" style="flex:none;width:100%" onclick="openVendasModal()">+ Novo Contrato</button>
+    </div>
+    <div class="filter-wrap">
+      <select class="city-filter-select" id="city-filter">
+        <option value="">🏙️ Todas as cidades</option>
+      </select>
+    </div>
+    <div class="section-title">Contratos</div>
+    <div id="vendas-list">
+      <div class="empty-state"><div class="empty-state-icon">📋</div><p>Nenhum contrato registrado</p></div>
+    </div>
+  </div>
+
+</div>
+<div class="safe-bot"></div>
+
+<!-- ── MODAL TRANSAÇÕES ── -->
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <h2 id="modal-title">Nova Transação</h2>
+      <button class="close-btn" onclick="closeModal()">✕</button>
+    </div>
+    <div class="form-group">
+      <label>Categoria</label>
+      <select id="category">
+        <option value="">Selecione uma categoria</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Valor (R$)</label>
+      <input type="number" id="amount" placeholder="0,00" step="0.01" min="0" inputmode="decimal">
+    </div>
+    <div class="form-group">
+      <label>Descrição (opcional)</label>
+      <input type="text" id="description" placeholder="Ex: Supermercado, conta de luz…">
+    </div>
+    <div class="form-group">
+      <label>Data</label>
+      <input type="date" id="date">
+    </div>
+    <div class="form-buttons">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="addTransaction()">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL VENDAS ── -->
+<div class="modal" id="vendas-modal">
+  <div class="modal-content">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <h2 id="vendas-modal-title">➕ Novo Contrato</h2>
+      <button class="close-btn" onclick="closeVendasModal()">✕</button>
+    </div>
+    <div class="form-group">
+      <label>Cidade</label>
+      <input type="text" id="vendas-city" placeholder="Ex: Areal, Miguel Pereira…" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label>Nome do Cliente</label>
+      <input type="text" id="vendas-client" placeholder="Nome ou razão social" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label>Valor do Contrato (R$)</label>
+      <input type="number" id="vendas-valor" placeholder="0,00" step="0.01" min="0" inputmode="decimal">
+    </div>
+    <div class="form-group">
+      <label>Forma de Pagamento</label>
+      <select id="vendas-pagamento">
+        <option value="">Selecione</option>
+        <option value="Dinheiro">💵 Dinheiro</option>
+        <option value="Cartão Crédito">💳 Cartão Crédito</option>
+        <option value="Cartão Débito">🏧 Cartão Débito</option>
+        <option value="Pix">📲 Pix</option>
+        <option value="Boleto">📄 Boleto</option>
+        <option value="Transferência">🏦 Transferência Bancária</option>
+        <option value="Parcelado">📅 Parcelado</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Status</label>
+      <select id="vendas-status">
+        <option value="areceber">⏳ A Receber</option>
+        <option value="pago">✅ Pago</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Data</label>
+      <input type="date" id="vendas-date">
+    </div>
+    <div class="form-group">
+      <label>Observações (opcional)</label>
+      <input type="text" id="vendas-obs" placeholder="Notas sobre o contrato">
+    </div>
+    <div class="form-buttons">
+      <button class="btn btn-secondary" onclick="closeVendasModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="addVenda()">Adicionar Contrato</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOAST ── -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── UTILS ──
+const fmt = v => 'R$ ' + v.toFixed(2).replace('.', ',');
+const today = () => new Date().toISOString().split('T')[0];
+const showToast = (msg, ms = 2200) => {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), ms);
+};
+
+// ── CATEGORIAS ──
+const CATS = {
+  pessoal: {
+    income:  ['Salário','Freelance','Investimento','Prêmio','Outro'],
+    expense: ['Alimentação','Transporte','Moradia','Saúde','Educação','Lazer','Outros']
+  },
+  impacto: {
+    income:  ['Pesquisas','Publicidade','Consultoria','Treinamento','Outro'],
+    expense: ['Salários','Equipamento','Marketing','Operacional','Impostos','Fornecedores','Outros']
+  }
+};
+
+let _curType = null, _curTab = 'pessoal', _curMode = null;
+
+// ── INIT ──
+document.addEventListener('DOMContentLoaded', () => {
+  setToday();
+  render();
+  renderVendas();
+  // Tabs
+  document.querySelectorAll('.tab-btn').forEach(btn =>
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab))
+  );
+  // City filter
+  document.getElementById('city-filter').addEventListener('change', renderVendas);
+  // Modal close on backdrop
+  document.getElementById('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
+  document.getElementById('vendas-modal').addEventListener('click', e => { if (e.target.id === 'vendas-modal') closeVendasModal(); });
+  // PWA banner show after 1.5s if not dismissed
+  setTimeout(() => {
+    if (!localStorage.getItem('pwa-banner-dismissed')) {
+      document.getElementById('pwa-banner-pessoal').classList.add('show');
+    }
+  }, 1500);
+});
+
+// ── TABS ──
+function switchTab(tab) {
+  _curTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === tab + '-tab'));
+  document.getElementById('app-body').scrollTop = 0;
+  if (tab === 'vendas') renderVendas();
+}
+
+// ── TRANSACTIONS ──
+function getTransactions() { return JSON.parse(localStorage.getItem('transactions') || '[]'); }
+function saveTransactions(t) { localStorage.setItem('transactions', JSON.stringify(t)); }
+
+function render() {
+  const all = getTransactions();
+  ['pessoal','impacto'].forEach(type => {
+    const list = all.filter(t => t.tabType === type).sort((a,b) => b.date.localeCompare(a.date));
+    const el = document.getElementById(type + '-list');
+    if (!list.length) {
+      el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📋</div><p>Nenhuma transação registrada</p></div>`;
+    } else {
+      el.innerHTML = list.map(t => `
+        <div class="transaction-item ${t.type}">
+          <div class="transaction-info">
+            <div class="transaction-category">${t.category}</div>
+            ${t.description ? `<div class="transaction-desc">${t.description}</div>` : ''}
+            <div class="transaction-date">${new Date(t.date + 'T12:00').toLocaleDateString('pt-BR')}</div>
+          </div>
+          <div style="display:flex;align-items:center;">
+            <span class="transaction-amount ${t.type}">${t.type==='income'?'+':'−'} ${fmt(t.amount)}</span>
+            <button class="delete-btn" onclick="deleteTransaction(${t.id})">🗑️</button>
+          </div>
+        </div>
+      `).join('');
+    }
+    // Balances
+    const income  = list.filter(t => t.type==='income').reduce((s,t)=>s+t.amount,0);
+    const expense = list.filter(t => t.type==='expense').reduce((s,t)=>s+t.amount,0);
+    document.getElementById(type+'-income').textContent  = fmt(income);
+    document.getElementById(type+'-expense').textContent = fmt(expense);
+    const bal = document.getElementById(type+'-balance');
+    bal.textContent = fmt(income - expense);
+    bal.style.color = income - expense >= 0 ? 'var(--green)' : 'var(--red)';
+  });
+}
+
+function openModal(type, mode) {
+  _curType = type; _curMode = mode;
+  document.getElementById('modal-title').textContent = mode==='income' ? '➕ Nova Receita' : '➖ Nova Despesa';
+  const sel = document.getElementById('category');
+  sel.innerHTML = '<option value="">Selecione uma categoria</option>' +
+    CATS[type][mode].map(c => `<option value="${c}">${c}</option>`).join('');
+  document.getElementById('modal').classList.add('active');
+}
+function closeModal() {
+  document.getElementById('modal').classList.remove('active');
+  document.getElementById('amount').value = '';
+  document.getElementById('description').value = '';
+  document.getElementById('category').value = '';
+  setToday();
+}
+
+function addTransaction() {
+  const amount = parseFloat(document.getElementById('amount').value);
+  const category = document.getElementById('category').value;
+  const description = document.getElementById('description').value.trim();
+  const date = document.getElementById('date').value;
+  if (!amount || !category || !date) { showToast('⚠️ Preencha os campos obrigatórios'); return; }
+  const list = getTransactions();
+  list.push({ id: Date.now(), type: _curMode, amount, category, description, date, tabType: _curType });
+  saveTransactions(list);
+  render();
+  closeModal();
+  showToast(_curMode==='income' ? '✅ Receita adicionada!' : '✅ Despesa adicionada!');
+}
+
+function deleteTransaction(id) {
+  if (!confirm('Deletar esta transação?')) return;
+  saveTransactions(getTransactions().filter(t => t.id !== id));
+  render();
+  showToast('🗑️ Transação removida');
+}
+
+// ── VENDAS ──
+function getVendas() { return JSON.parse(localStorage.getItem('vendas') || '[]'); }
+function saveVendas(v) { localStorage.setItem('vendas', JSON.stringify(v)); }
+
+function renderVendas() {
+  const all = getVendas();
+  // Rebuild city filter
+  const sel = document.getElementById('city-filter');
+  const cur = sel.value;
+  const cities = [...new Set(all.map(v=>v.city))].sort();
+  sel.innerHTML = '<option value="">🏙️ Todas as cidades</option>' +
+    cities.map(c => `<option value="${c}">${c}</option>`).join('');
+  sel.value = cur;
+
+  const selectedCity = sel.value;
+  const list = (selectedCity ? all.filter(v=>v.city===selectedCity) : all)
+    .sort((a,b) => b.date.localeCompare(a.date));
+
+  const el = document.getElementById('vendas-list');
+  if (!list.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📋</div><p>Nenhum contrato registrado</p></div>`;
+  } else {
+    el.innerHTML = list.map(v => `
+      <div class="contract-card">
+        <div class="contract-header">
+          <span class="contract-city">📍 ${v.city}</span>
+          <span class="status-badge ${v.status}">${v.status==='pago' ? '✅ Pago' : '⏳ A Receber'}</span>
+        </div>
+        <div class="contract-info">
+          <div class="contract-info-row"><span>👤 Cliente</span><span>${v.client}</span></div>
+          <div class="contract-info-row"><span>💳 Pagamento</span><span>${v.pagamento}</span></div>
+          <div class="contract-info-row"><span>📅 Data</span><span>${new Date(v.date+'T12:00').toLocaleDateString('pt-BR')}</span></div>
+          ${v.obs ? `<div class="contract-info-row"><span>📝 Obs</span><span>${v.obs}</span></div>` : ''}
+        </div>
+        <div class="contract-value">${fmt(v.valor)}</div>
+        <div class="contract-actions">
+          ${v.status==='areceber'
+            ? `<button class="contract-btn pagar" onclick="setVendaStatus(${v.id},'pago')">Marcar Pago</button>`
+            : `<button class="contract-btn desfazer" onclick="setVendaStatus(${v.id},'areceber')">Desfazer</button>`
+          }
+          <button class="contract-btn deletar" onclick="deleteVenda(${v.id})">Deletar</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Totals (always over full all, not filtered)
+  const totalV   = all.reduce((s,v)=>s+v.valor,0);
+  const totalRec = all.filter(v=>v.status==='pago').reduce((s,v)=>s+v.valor,0);
+  const totalAR  = all.filter(v=>v.status==='areceber').reduce((s,v)=>s+v.valor,0);
+  document.getElementById('vendas-total').textContent     = fmt(totalV);
+  document.getElementById('vendas-recebido').textContent  = fmt(totalRec);
+  document.getElementById('vendas-areceber').textContent  = fmt(totalAR);
+  document.getElementById('vendas-contratos').textContent = all.length;
+}
+
+function openVendasModal() {
+  document.getElementById('vendas-modal').classList.add('active');
+}
+function closeVendasModal() {
+  document.getElementById('vendas-modal').classList.remove('active');
+  ['vendas-city','vendas-client','vendas-valor','vendas-obs'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('vendas-pagamento').value = '';
+  document.getElementById('vendas-status').value = 'areceber';
+  setToday();
+}
+
+function addVenda() {
+  const city      = document.getElementById('vendas-city').value.trim();
+  const client    = document.getElementById('vendas-client').value.trim();
+  const valor     = parseFloat(document.getElementById('vendas-valor').value);
+  const pagamento = document.getElementById('vendas-pagamento').value;
+  const status    = document.getElementById('vendas-status').value;
+  const date      = document.getElementById('vendas-date').value;
+  const obs       = document.getElementById('vendas-obs').value.trim();
+  if (!city || !client || !valor || !pagamento || !date) { showToast('⚠️ Preencha todos os campos'); return; }
+  const list = getVendas();
+  list.push({ id: Date.now(), city, client, valor, pagamento, status, date, obs });
+  saveVendas(list);
+  renderVendas();
+  closeVendasModal();
+  showToast('✅ Contrato adicionado!');
+}
+
+function setVendaStatus(id, status) {
+  const list = getVendas();
+  const v = list.find(v => v.id === id);
+  if (v) { v.status = status; saveVendas(list); renderVendas(); showToast(status==='pago' ? '✅ Marcado como pago!' : '↩️ Status revertido'); }
+}
+
+function deleteVenda(id) {
+  if (!confirm('Deletar este contrato?')) return;
+  saveVendas(getVendas().filter(v => v.id !== id));
+  renderVendas();
+  showToast('🗑️ Contrato removido');
+}
+
+// ── UTILS ──
+function setToday() {
+  document.getElementById('date').value = today();
+  document.getElementById('vendas-date').value = today();
+}
+function closePwaBanner() {
+  document.getElementById('pwa-banner-pessoal').classList.remove('show');
+  localStorage.setItem('pwa-banner-dismissed', '1');
+}
+
+// ── PWA INSTALL ──
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('install-btn').classList.add('show');
+});
+document.getElementById('install-btn').addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  if (outcome === 'accepted') showToast('🎉 App instalado na tela inicial!');
+  deferredPrompt = null;
+  document.getElementById('install-btn').classList.remove('show');
+  closePwaBanner();
+});
+window.addEventListener('appinstalled', () => {
+  showToast('🎉 App instalado com sucesso!');
+  document.getElementById('install-btn').classList.remove('show');
+});
+
+// ── SERVICE WORKER ──
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js')
+    .catch(err => console.warn('SW error:', err));
+}
+</script>
+</body>
+</html>

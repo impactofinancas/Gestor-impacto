@@ -1,0 +1,29 @@
+{
+  "name": "Gestor Financeiro Impacto",
+  "short_name": "Impacto $",
+  "description": "Gestor financeiro da Impacto Pesquisas & Publicidades",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#C9A84C",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": [
+    "finance",
+    "productivity"
+  ],
+  "lang": "pt-BR"
+}
